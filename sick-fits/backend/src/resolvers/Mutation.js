@@ -43,10 +43,18 @@ const Mutations = {
     const item = await ctx.db.query.item(
       { where },
       `
-      {id title}
+      {id title user { id }}
     `
     );
-    // TODO check if own it
+
+    const ownsItem = item.user.id === ctx.request.userId;
+    const hasPermissions = ctx.request.user.permissions.some(permission =>
+      ['ADMIN', 'ITEMDELETE'].includes(permission)
+    );
+    if (!ownsItem || !hasPermissions) {
+      throw new Error("You don't have permission!");
+    }
+
     return ctx.db.mutation.deleteItem({ where }, info);
   },
   async signup(parent, args, ctx, info) {
